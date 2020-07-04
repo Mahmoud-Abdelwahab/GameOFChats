@@ -8,16 +8,39 @@
 
 import UIKit
 
+@available(iOS 13.0, *)
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
-        // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
-        // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        guard let _ = (scene as? UIWindowScene) else { return }
+         
+            guard let windowScene = (scene as? UIWindowScene) else { return }
+            
+            // here we want to add two Navigation controler to hold two VCs the add them to uitabbar in it's array
+            //        let searchNavigationControler = UINavigationController(rootViewController: SearchVC())
+            //        let favouriteNC = UINavigationController(rootViewController: FavouriteList())
+            // after creating two navigation controler now we want to add them to uitabBarControler in it's array
+            
+            //        let tabBar = UITabBarController()
+            //        tabBar.viewControllers = [searchNavigationControler , favouriteNC]
+            
+            window = UIWindow(frame: windowScene.coordinateSpace.bounds)// make it full screen this windows insted of the storyboard 
+            
+            ///every window has window scene so we will set this up below
+            window?.windowScene = windowScene
+            
+            /// now we wwant to set root viewcontroler
+            
+            // window?.rootViewController = ViewController() // this ViewControler which is  u want to be initial one
+            
+            
+            //*****  not that  you can change ViewController() as u want also u can but nav bar viewcontroler here to mage all app
+            window?.rootViewController = UINavigationController(rootViewController: MessagesVC())
+            
+            window?.makeKeyAndVisible()
+        
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
