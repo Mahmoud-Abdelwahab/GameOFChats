@@ -12,6 +12,7 @@ import Firebase
 class LoginVC: UIViewController {
     
     
+    
     private lazy var stackView : UIStackView  = {
         let stackView       = UIStackView()
         stackView.axis                       = .vertical
@@ -109,9 +110,18 @@ class LoginVC: UIViewController {
         // imageView.layer.cornerRadius  = imageView.width/2
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
+        ///******* adding  tap gesture  to the imageview
+        imageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handelSelectProfileImageView)))
+        ///************* don't forget to enable user interaction on imageview *****************
+        
+        imageView.isUserInteractionEnabled = true
+        
+        
         return imageView
     }()
+      
     
+ 
     
     //**** segmented controler button
     
@@ -261,7 +271,10 @@ class LoginVC: UIViewController {
     }
     
     @objc func handelRegister()  {
-        guard let name = userName.text , !name.isEmpty , let email = email.text , !email.isEmpty, let password = password.text , !password.isEmpty  else {
+        guard let name = userName.text , !name.isEmpty , let email = email.text , !email.isEmpty, let password = password.text , !password.isEmpty , let image = profilePicture.image , let data = image.jpegData(compressionQuality: 0.1) else {
+            
+            ///**** image.jpegData(compressionQuality: 0.1)   to compreess the image  if you used   image.pngData() i will consume  a lot of your network plane
+            
             print("Invalid Form ....")
             return
         }
@@ -273,21 +286,58 @@ class LoginVC: UIViewController {
             //successfully authenticated user
             print("Successfully authenticated ...")
             // save user data to data base
-            
-            guard let uID = Auth.auth().currentUser?.uid else{return}
-            let dbRef = Firebase.Database.database().reference()
-            
-            dbRef.child("users").child(uID).updateChildValues(["name":name,"email" : email]) { (error, DbRef) in
+            self.uploadProfilPicture(with: data,filename:email  , completion : { (url) in
+                guard url != nil else { return}
                 
-                if error != nil{
-                    print(error?.localizedDescription ?? "")
-                }
-                
-                print("User saved successfully")
-                   self.dismiss(animated: true, completion: nil)
-            }
+                print(url)
+              guard let uID = Auth.auth().currentUser?.uid else{return}
+                       let dbRef = Firebase.Database.database().reference()
+                       
+                       dbRef.child("users").child(uID).updateChildValues(["name":name,"email" : email , "profileImageUrl" : url]) { (error, DbRef) in
+                           
+                           if error != nil{
+                               print(error?.localizedDescription ?? "")
+                           }
+                           
+                           print("User saved successfully")
+                              self.dismiss(animated: true, completion: nil)
+                       }
+             })
+         
         })
     }
+    
+    
+      private let storage = Storage.storage().reference()
+      public typealias UploadPictureCompletion = (String?) -> Void
+    
+    public func uploadProfilPicture(with data : Data , filename : String , completion : @escaping UploadPictureCompletion ){
+        let asd = NSUUID().uuidString /// this generate summy string  unique id
+        storage.child("images/profile_images\(filename).JPEG").putData(data , metadata: nil , completion: {metadata, error in
+             guard error == nil else {
+                //failed "failed to upload  the image <#String#>"
+                 completion(nil)
+                 return
+             }
+             // here photo uploaded successfully now i want to get the photo url
+            let reference = self.storage.child("images/profile_images\(filename).JPEG").downloadURL { (url, error) in
+                 guard let url = url else{
+                     print("can't get photo url back 😭") //"can't get the photo url "
+                     completion(nil)
+                     return
+                 }
+                 
+                 // here i get the picture url successfully
+                 
+                 print("the usr is : \(url.absoluteString)")
+                 completion(url.absoluteString)
+             }
+             
+         })
+         
+     }
+    
+    
     
     func setUploginRegisterSegmentedControler() {
         
@@ -326,3 +376,35 @@ class LoginVC: UIViewController {
 
 
 
+extension LoginVC : UIImagePickerControllerDelegate , UINavigationControllerDelegate{
+    
+    
+    @objc func handelSelectProfileImageView() {
+         
+        let picker = UIImagePickerController()
+        picker.delegate = self
+        picker.allowsEditing = true /// to allow cropping the image
+         
+        present(picker,animated: true)
+     }
+    
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        // on pressing cancel
+        dismiss(animated: true, completion: nil)
+       
+    }
+    
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        
+         // this called when the user take OR select a photo
+              // after choosing or taking the image it returen in a dictionary didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]
+              
+             
+              guard let selectedImage = info[UIImagePickerController.InfoKey.editedImage] as? UIImage else{return}
+        profilePicture.image = selectedImage
+        picker.dismiss(animated: true, completion: nil)
+    }
+    
+}

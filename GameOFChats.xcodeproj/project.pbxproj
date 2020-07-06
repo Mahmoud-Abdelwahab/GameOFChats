@@ -20,6 +20,9 @@
 		BB06A9FA24AF9DF600346569 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB06A9F924AF9DF600346569 /* GoogleService-Info.plist */; };
 		BB21704224B0C46F00FDF42E /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB21704124B0C46F00FDF42E /* User.swift */; };
 		BB21704424B0D02100FDF42E /* NewMessageVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB21704324B0D02100FDF42E /* NewMessageVC.swift */; };
+		BB7A3F8124B2CAD60059F10A /* ChatLogVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7A3F8024B2CAD50059F10A /* ChatLogVC.swift */; };
+		BB7A3F8424B345A90059F10A /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7A3F8324B345A90059F10A /* Message.swift */; };
+		BB7A3F8624B35B750059F10A /* UserCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7A3F8524B35B740059F10A /* UserCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +43,9 @@
 		BB06A9F924AF9DF600346569 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		BB21704124B0C46F00FDF42E /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		BB21704324B0D02100FDF42E /* NewMessageVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewMessageVC.swift; sourceTree = "<group>"; };
+		BB7A3F8024B2CAD50059F10A /* ChatLogVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatLogVC.swift; sourceTree = "<group>"; };
+		BB7A3F8324B345A90059F10A /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
+		BB7A3F8524B35B740059F10A /* UserCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,19 +89,18 @@
 		BB06A9DB24AF1B8B00346569 /* GameOFChats */ = {
 			isa = PBXGroup;
 			children = (
+				BB7A3F8524B35B740059F10A /* UserCell.swift */,
 				BB21704024B0C44900FDF42E /* Model */,
 				BB06A9F224AF460800346569 /* Extentions */,
+				BB7A3F8224B2CAE60059F10A /* ViewControllers */,
 				BB06A9DC24AF1B8B00346569 /* AppDelegate.swift */,
 				BB06A9DE24AF1B8B00346569 /* SceneDelegate.swift */,
-				BB06A9F024AF319B00346569 /* LoginVC.swift */,
-				BB06A9E024AF1B8B00346569 /* MessagesVC.swift */,
 				BB06A9E224AF1B8B00346569 /* Main.storyboard */,
 				BB06A9E524AF1B9000346569 /* Assets.xcassets */,
 				BB06A9F724AF995C00346569 /* winter.png */,
 				BB06A9E724AF1B9000346569 /* LaunchScreen.storyboard */,
 				BB06A9EA24AF1B9000346569 /* Info.plist */,
 				BB06A9F924AF9DF600346569 /* GoogleService-Info.plist */,
-				BB21704324B0D02100FDF42E /* NewMessageVC.swift */,
 			);
 			path = GameOFChats;
 			sourceTree = "<group>";
@@ -112,8 +117,20 @@
 			isa = PBXGroup;
 			children = (
 				BB21704124B0C46F00FDF42E /* User.swift */,
+				BB7A3F8324B345A90059F10A /* Message.swift */,
 			);
 			path = Model;
+			sourceTree = "<group>";
+		};
+		BB7A3F8224B2CAE60059F10A /* ViewControllers */ = {
+			isa = PBXGroup;
+			children = (
+				BB06A9E024AF1B8B00346569 /* MessagesVC.swift */,
+				BB06A9F024AF319B00346569 /* LoginVC.swift */,
+				BB21704324B0D02100FDF42E /* NewMessageVC.swift */,
+				BB7A3F8024B2CAD50059F10A /* ChatLogVC.swift */,
+			);
+			path = ViewControllers;
 			sourceTree = "<group>";
 		};
 		C089AB10483AAFFA9969DF5C /* Pods */ = {
@@ -245,9 +262,12 @@
 				BB06A9E124AF1B8B00346569 /* MessagesVC.swift in Sources */,
 				BB06A9DD24AF1B8B00346569 /* AppDelegate.swift in Sources */,
 				BB06A9F124AF319B00346569 /* LoginVC.swift in Sources */,
+				BB7A3F8424B345A90059F10A /* Message.swift in Sources */,
 				BB06A9DF24AF1B8B00346569 /* SceneDelegate.swift in Sources */,
 				BB06A9F424AF462A00346569 /* Color+Ext.swift in Sources */,
+				BB7A3F8124B2CAD60059F10A /* ChatLogVC.swift in Sources */,
 				BB21704224B0C46F00FDF42E /* User.swift in Sources */,
+				BB7A3F8624B35B750059F10A /* UserCell.swift in Sources */,
 				BB21704424B0D02100FDF42E /* NewMessageVC.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
