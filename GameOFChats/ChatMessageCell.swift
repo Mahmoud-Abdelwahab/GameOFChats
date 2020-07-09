@@ -91,7 +91,7 @@ class ChatMessageCell : UICollectionViewCell{
             
             
             
-            textMessage.leadingAnchor.constraint(equalTo: recieverImage.leadingAnchor , constant: 8),
+            textMessage.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor , constant: 8),
             textMessage.centerYAnchor.constraint(equalTo: self.centerYAnchor),
             textMessage.heightAnchor.constraint(equalTo: self.heightAnchor, constant:  -10),
             textMessage.widthAnchor.constraint(equalToConstant: 300),
