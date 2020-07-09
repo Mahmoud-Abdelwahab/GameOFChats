@@ -21,10 +21,9 @@ class UserCell : UITableViewCell {
     
     func setUpCell(with message : Message) {
         
-        
-        if let toID = message.toID {
+        let partnerID = message.chatPartner()
                  
-                 Database.database().reference().child("users").child(toID).observeSingleEvent(of: .value, with: { (snapshot) in
+        Database.database().reference().child("users").child(partnerID!).observeSingleEvent(of: .value, with: { (snapshot) in
                       
                      if let dictionary = snapshot.value as? [String : Any]
                      {
@@ -45,7 +44,7 @@ class UserCell : UITableViewCell {
                      
                  }, withCancel: nil)
                  
-             }
+             
         
             
              detailTextLabel?.text = message.text
@@ -84,7 +83,7 @@ class UserCell : UITableViewCell {
     
     let timelable : UILabel = {
         let lable = UILabel()
-        lable.text = "HH:MM:SS"
+      //  lable.text = "HH:MM:SS"
         lable.textColor  = UIColor.darkGray
         lable.font       = UIFont.systemFont(ofSize: 13)
         lable.translatesAutoresizingMaskIntoConstraints = false
