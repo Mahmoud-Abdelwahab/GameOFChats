@@ -47,10 +47,11 @@ class MessagesVC: UITableViewController {
     
     
     func  observeUserMessages(){
-    
-    
+        messages.removeAll()
+        var counter : Int = 0
         guard let uID = Auth.auth().currentUser?.uid else{return}
-        
+     
+
         let dbRef = Database.database().reference().child("user-messages").child(uID)
         dbRef.observe(.childAdded, with: { (snapshot) in
             //// here i will get all user messages (ids)  from user-message table then i will take this ids and get the messages from message table for this user
@@ -63,7 +64,7 @@ class MessagesVC: UITableViewController {
             
             messageRef.observeSingleEvent(of: .value, with: { (snap) in
                 
-                print(snap)
+               // print(snap)
                 
                 guard let dic = snap.value as? [String : Any] , !dic.isEmpty   else
                 {
@@ -99,18 +100,39 @@ class MessagesVC: UITableViewController {
                     //let sortedArray = images.sorted {
                     //                    $0.fileID < $1.fileID
                     //                }
+                    
+                    
+                    ///  i want to reduce the cost of reloding table view  in every message this  high load on the app think of the number of message so i will reload it after 0.1 sec i used this way  cause i don't know the number of message so when i finish  store them in the array and reload the collection view
+                    
+                    
+                    ///**** this timer invalidated in every time  a new message comes and invalidate until there is no message come  again so this timer will be excuted only one time
+                    //we just canceled our timer if there is still new messages comes if it doesn't break the time
+                    self.timer?.invalidate()
+                                       print("we just canceled our timer ")
+                    // لو الرساله مجنش قبل ال ٠٫١ ثانيه هيعمل ريست للتيمر لحد م اخر رساله تيجى والوقت ٠٫١ يخلص ومفيش حاجه تيجى ويعمل ريلود بقى
+                                       
+                                       self.timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.handleReloadTable), userInfo: nil, repeats: false)
+                                       print("schedule a table reload in 0.1 sec")
                 }
                 
                 // self.messages.append(message)
-                DispatchQueue.main.async {self.tableView.reloadData()}
+          
                 
-              
             }, withCancel: nil)
             
             
         }, withCancel: nil)
     }
     
+    var timer: Timer?
+     
+     @objc func handleReloadTable() {
+         //this will crash because of background thread, so lets call this on dispatch_async main thread
+         DispatchQueue.main.async(execute: {
+             print("we reloaded the table")
+             self.tableView.reloadData()
+         })
+     }
     
     //    func  messageObserver() {
     //        let dbRef = Database.database().reference().child("messages")

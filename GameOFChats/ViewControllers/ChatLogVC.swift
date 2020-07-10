@@ -8,6 +8,7 @@
 
 import UIKit
 import Firebase
+import SDWebImage
 class ChatLogVC: UICollectionViewController  {
     
     var messages = [Message]()
@@ -69,7 +70,71 @@ class ChatLogVC: UICollectionViewController  {
         //        title = "Chat Log Controller"
         collectionView.backgroundColor = .white
         setUpInputComponents()
+        
+        setUpKeyBoardObserver()
+        
+        ///***************** if uou want the keyboard to scroll up & down with the  collection view &table view scrollling ************
+        collectionView.keyboardDismissMode = .interactive
     }
+    
+    
+    func setUpKeyBoardObserver() {
+        // when key board appeare it firs a notification so i will liesten for this notification then add action  when it fire
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
+        
+    }
+    
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        // this is very important to remove notification  observer
+        //** if you didn't remove it it will casue memory leak
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    
+    // this method will be called every time the keyboard will showed
+    @objc func handleKeyboardWillShow(_ notification: Notification) {
+        // this nitification veriable sent automatically to this method this hold information about how to get the height for the keyboard and ex ....
+        print(notification.userInfo) // this hold this info
+        let keyboardFrame = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as AnyObject).cgRectValue
+        
+         // **** keyboardFrame this var hold the key board fram we can access the height of it
+        print(keyboardFrame?.height)
+        // after i get the keyboard height i will move the imput view to top be the height
+        
+        
+        let keyboardDuration = (notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as AnyObject).doubleValue
+        
+        
+        // push up the inputContainer to the top with the keyboard height
+        containerViewBottomAnchor?.constant = -keyboardFrame!.height
+        
+        UIView.animate(withDuration: keyboardDuration!, animations: {
+            self.view.layoutIfNeeded()
+        })
+    }
+    
+    
+     // dismiss the keyboard  command+k
+    @objc func handleKeyboardWillHide(_ notification: Notification) {
+        let keyboardDuration = (notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as AnyObject).doubleValue
+         
+        containerViewBottomAnchor?.constant = -40   // 0
+         
+        
+        //keyboardDuration  this is the keyboard duration to shown up
+        UIView.animate(withDuration: keyboardDuration!, animations: {
+            self.view.layoutIfNeeded() // this used every time you need to animate the constaints after modifing it  like this   containerViewBottomAnchor?.constant = 0
+        })
+        
+    }
+    
+    
+    var containerViewBottomAnchor : NSLayoutConstraint!
     
     private func setUpInputComponents(){
         
@@ -121,6 +186,10 @@ class ChatLogVC: UICollectionViewController  {
         inputContainer.addSubview(sendButton)
         inputContainer.addSubview(separatorLine)
         
+        /// the input container botton constraints  is vaiable with the keyboard height
+        containerViewBottomAnchor = inputContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -40)
+        containerViewBottomAnchor.isActive = true
+        
         /// * *** * * * * ** * * * * ** * * * * ** * * * * * * * * * * * * *
         /// right / left anchor constraints doesn't affrcted by localization so you can use it whenever you want to do this
         /// leading / trailling constraints affected by localization if arabic reading direction gos from right to left  and so on .
@@ -129,7 +198,8 @@ class ChatLogVC: UICollectionViewController  {
             inputContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             inputContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             inputContainer.heightAnchor.constraint(equalToConstant: 60),
-            inputContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -40),
+            
+           // inputContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -40),
             
             // input text constraints
             
@@ -227,15 +297,29 @@ extension ChatLogVC : UICollectionViewDelegateFlowLayout {
             // display the blue cell [sender cell ]
             cell.bubbleView.backgroundColor = ChatMessageCell.blueColor
             cell.textMessage.textColor  = .white
-//            cell.bubbleViewRightAnchor.isActive = true
-//                cell.bubbleViewLeftAnchor.isActive = false
+            cell.recieverImage.isHidden = true 
         }else{
             //display the the grey cell [ reciever cell ]
             
             cell.bubbleView.backgroundColor = UIColor(r: 240, g: 240, b: 240)
             cell.textMessage.textColor  = .black
             cell.bubbleViewLeftAnchor.isActive = true
-                cell.bubbleViewRightAnchor.isActive = false
+            cell.bubbleViewRightAnchor.isActive = false
+            
+            
+            // load  peer image
+            
+            guard let imageUrl = user?.profileImageUrl , !imageUrl.isEmpty  else {
+                
+                return
+            }
+            
+            cell.recieverImage.sd_setImage( with: URL(string: imageUrl), completed: { (image, error, cash, url) in
+                DispatchQueue.main.async {
+                    cell.recieverImage.image = image
+                    //                    tableView.reloadData()
+                }
+            })
         }
         
         cell.textMessage.text = messages[indexPath.row].text
