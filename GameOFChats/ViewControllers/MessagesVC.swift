@@ -46,9 +46,137 @@ class MessagesVC: UITableViewController {
     }
     
     
+    
+//    func observeUserMessages() {
+//           guard let uid = Auth.auth().currentUser?.uid else {
+//               return
+//           }
+//
+//           let ref = Database.database().reference().child("user-messages").child(uid)
+//           ref.observe(.childAdded, with: { (snapshot) in
+//
+//               let userId = snapshot.key
+//
+//               print(uid, userId)
+//               Database.database().reference().child("user-messages").child(uid).child(userId).observe(.childAdded, with: { (snapshot) in
+//
+//                   let messageId = snapshot.key
+//                   self.fetchMessageWithMessageId(messageId)
+//
+//                   }, withCancel: nil)
+//
+//               }, withCancel: nil)
+//       }
+       
+       fileprivate func fetchMessageWithMessageId(_ messageId: String) {
+        
+        
+
+                    /// '  here i want to get the user chat with the specifice peerd user only
+                    let messageRef = Database.database().reference().child("messages").child(messageId)
+                    
+                    messageRef.observeSingleEvent(of: .value, with: { (snap) in
+                        
+                       // print(snap)
+                        
+                        guard let dic = snap.value as? [String : Any] , !dic.isEmpty   else
+                        {
+                            return
+                            
+                        }
+                        
+                        
+        //                guard   let text = dic["text"] as? String , !text.isEmpty , let formId  = dic["fromID"] as? String , !formId.isEmpty , let toID  = dic["toID"] as? String , !toID.isEmpty   , let times  = dic["timeStamp"] as? NSNumber   else
+        //                {
+        //                    return
+        //                }
+                        
+                        let message = Message(dictionary: dic)
+        //                message.text = text
+        //                message.toID = toID
+        //                message.timeStamp =  times
+        //                message.fromID = formId
+                        
+                        if let partnerId = message.chatPartner(){ //here the message between me and any other person i want to group them together with the current user id only to remove duplicated cell in this table  if u removed this ans set it toId or fromId only this will cause bug cause it depends on the cureent user and we can't detect the current user id from the to way message except when we compare ther in this func   message.chatPartner()
+                            ///  this is very important to  remove all message duplication  to the same user  and show the last message only so i put the messages in a dictionary with the [ same ] key  then put  it as array in messages array  which hold all users then the cureent user chated with them before
+                            
+                            #warning("Bug here")              ////  **************** Bug here *****************
+                            self.messageDictionary[partnerId] = message
+                            
+                        }
+                        self.attemptReloadOfTable()
+                        
+                    }, withCancel: nil)
+                    
+        
+//           let messagesReference = Database.database().reference().child("messages").child(messageId)
+//
+//           messagesReference.observeSingleEvent(of: .value, with: { (snapshot) in
+//
+//               if let dictionary = snapshot.value as? [String: AnyObject] {
+//                   let message = Message(dictionary: dictionary)
+//
+//                   if let chatPartnerId = message.chatPartnerId() {
+//                       self.messagesDictionary[chatPartnerId] = message
+//                   }
+//
+//                   self.attemptReloadOfTable()
+//               }
+//
+//               }, withCancel: nil)
+       }
+       
+       fileprivate func attemptReloadOfTable() {
+        
+            
+                                       ///  i want to reduce the cost of reloding table view  in every message this  high load on the app think of the number of message so i will reload it after 0.1 sec i used this way  cause i don't know the number of message so when i finish  store them in the array and reload the collection view
+                                       
+                                       
+                                       ///**** this timer invalidated in every time  a new message comes and invalidate until there is no message come  again so this timer will be excuted only one time
+                                       //we just canceled our timer if there is still new messages comes if it doesn't break the time
+                                       self.timer?.invalidate()
+                                                          print("we just canceled our timer ")
+                                       // لو الرساله مجنش قبل ال 0.5 ثانيه هيعمل ريست للتيمر لحد م اخر رساله تيجى والوقت 0.5  يخلص ومفيش حاجه تيجى ويعمل ريلود بقى
+                                                          
+                                                          self.timer = Timer.scheduledTimer(timeInterval: 0.5, target: self, selector: #selector(self.handleReloadTable), userInfo: nil, repeats: false)
+                                                          print("schedule a table reload in 0.1 sec")
+               }
+       
+       var timer: Timer?
+       
+       @objc func handleReloadTable() {
+        
+         self.messages = Array( self.messageDictionary.values)
+                                
+                                    //// now i want to srot the message by timestamp
+                                    self.messages.sort(by: { (message1, message2) -> Bool in
+                                         return message1.timeStamp as! Int > message2.timeStamp as! Int
+                                    })
+                                    
+                                   
+                                
+                                
+                                
+                                // self.messages.append(message)
+        
+          //this will crash because of background thread, so lets call this on dispatch_async main thread
+              DispatchQueue.main.async(execute: {
+                  self.tableView.reloadData()
+              })
+       }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    //******************************
     func  observeUserMessages(){
-        messages.removeAll()
-        var counter : Int = 0
+       // messages.removeAll()
+       
         guard let uID = Auth.auth().currentUser?.uid else{return}
      
 
@@ -57,82 +185,23 @@ class MessagesVC: UITableViewController {
             //// here i will get all user messages (ids)  from user-message table then i will take this ids and get the messages from message table for this user
             
             //  print(snapshot.key)
-            let messageId = snapshot.key
+            //i will get the user id  which the current user chating with him
+             /// after this `i get all messags  relted with this user iwth all users `
+            let userId = snapshot.key
             
-            
-            let messageRef = Database.database().reference().child("messages").child(messageId)
-            
-            messageRef.observeSingleEvent(of: .value, with: { (snap) in
-                
-               // print(snap)
-                
-                guard let dic = snap.value as? [String : Any] , !dic.isEmpty   else
-                {
-                    return
-                    
-                }
-                
-                
-                guard   let text = dic["text"] as? String , !text.isEmpty , let formId  = dic["fromID"] as? String , !formId.isEmpty , let toID  = dic["toID"] as? String , !toID.isEmpty   , let times  = dic["timeStamp"] as? NSNumber   else
-                {
-                    return
-                }
-                
-                let message = Message()
-                message.text = text
-                message.toID = toID
-                message.timeStamp =  times
-                message.fromID = formId
-                
-                if let partnerId = message.chatPartner(){ //here the message between me and any other person i want to group them together with the current user id only to remove duplicated cell in this table  if u removed this ans set it toId or fromId only this will cause bug cause it depends on the cureent user and we can't detect the current user id from the to way message except when we compare ther in this func   message.chatPartner()
-                    ///  this is very important to  remove all message duplication  to the same user  and show the last message only so i put the messages in a dictionary with the [ same ] key  then put  it as array in messages array  which hold all users then the cureent user chated with them before
-                    
-                    #warning("Bug here")              ////  **************** Bug here *****************
-                    self.messageDictionary[partnerId] = message
-                    
-                    self.messages = Array( self.messageDictionary.values)
-                
-                    //// now i want to srot the message by timestamp
-                    self.messages.sort(by: { (message1, message2) -> Bool in
-                         return message1.timeStamp as! Int > message2.timeStamp as! Int
-                    })
-                    
-                    //let sortedArray = images.sorted {
-                    //                    $0.fileID < $1.fileID
-                    //                }
-                    
-                    
-                    ///  i want to reduce the cost of reloding table view  in every message this  high load on the app think of the number of message so i will reload it after 0.1 sec i used this way  cause i don't know the number of message so when i finish  store them in the array and reload the collection view
-                    
-                    
-                    ///**** this timer invalidated in every time  a new message comes and invalidate until there is no message come  again so this timer will be excuted only one time
-                    //we just canceled our timer if there is still new messages comes if it doesn't break the time
-                    self.timer?.invalidate()
-                                       print("we just canceled our timer ")
-                    // لو الرساله مجنش قبل ال ٠٫١ ثانيه هيعمل ريست للتيمر لحد م اخر رساله تيجى والوقت ٠٫١ يخلص ومفيش حاجه تيجى ويعمل ريلود بقى
-                                       
-                                       self.timer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(self.handleReloadTable), userInfo: nil, repeats: false)
-                                       print("schedule a table reload in 0.1 sec")
-                }
-                
-                // self.messages.append(message)
-          
-                
-            }, withCancel: nil)
-            
+             Database.database().reference().child("user-messages").child(uID).child(userId).observe(.childAdded, with: { (snapshot) in
+             
+             let messageId = snapshot.key
+             self.fetchMessageWithMessageId(messageId)
+             
+             }, withCancel: nil)
             
         }, withCancel: nil)
     }
     
-    var timer: Timer?
+   
      
-     @objc func handleReloadTable() {
-         //this will crash because of background thread, so lets call this on dispatch_async main thread
-         DispatchQueue.main.async(execute: {
-             print("we reloaded the table")
-             self.tableView.reloadData()
-         })
-     }
+ 
     
     //    func  messageObserver() {
     //        let dbRef = Database.database().reference().child("messages")
@@ -334,7 +403,12 @@ extension MessagesVC {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! UserCell
         
-        cell.message =  messages[indexPath.row]
+        if  messages.count > 0
+        {
+              cell.message =  messages[indexPath.row]
+        }
+        
+     //**   cell.message =  messages[indexPath.row]
         
         return cell
     }

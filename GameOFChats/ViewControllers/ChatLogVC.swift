@@ -21,8 +21,9 @@ class ChatLogVC: UICollectionViewController  {
     
     func observeMessages(){
         
-        guard let uid = Auth.auth().currentUser?.uid else{return}
-        Database.database().reference().child("user-messages").child(uid).observe(.childAdded, with: { (snapshot) in
+        
+        guard let uid = Auth.auth().currentUser?.uid ,let toId = user?.id  else{return}
+        Database.database().reference().child("user-messages").child(uid).child(toId).observe(.childAdded, with: {  (snapshot) in
             
             let messageKey = snapshot.key
             
@@ -35,20 +36,20 @@ class ChatLogVC: UICollectionViewController  {
                     return
                 }
                 
-                let message = Message()
+                let message = Message(dictionary: dictionary)
                 //  message.setValuesForKeys(dictionary)
-                message.text = text
-                message.toID = toID
-                message.timeStamp = times
-                message.fromID = formId
+//                message.text = text
+//                message.toID = toID
+//                message.timeStamp = times
+//                message.fromID = formId
                 
                 if message.chatPartner() == self.user?.id {
-                    
                     self.messages.append(message)
-                    DispatchQueue.main.async {
-                        self.collectionView.reloadData()
-                    }
+                    DispatchQueue.main.async(execute: {
+                        self.collectionView?.reloadData()
+                    })
                 }
+                
             }, withCancel: nil)
             
         }, withCancel: nil)
@@ -60,23 +61,105 @@ class ChatLogVC: UICollectionViewController  {
         super.viewDidLoad()
         
         // to make the very top space before the first cell on the top
-        collectionView.contentInset = UIEdgeInsets(top:15, left: 0, bottom: 80, right: 0)
+        collectionView.contentInset = UIEdgeInsets(top:15, left: 0, bottom: 8, right: 0)
         // is how to remove the right side scroll padding
-        collectionView.scrollIndicatorInsets = UIEdgeInsets(top:0, left: 0, bottom: 70, right: 0)
+        collectionView.scrollIndicatorInsets = UIEdgeInsets(top:0, left: 0, bottom: 10, right: 0)
         
         // registring th cell
         collectionView.register(ChatMessageCell.self, forCellWithReuseIdentifier: "cell")
         collectionView.alwaysBounceVertical = true // this to make collection view dragable
         //        title = "Chat Log Controller"
         collectionView.backgroundColor = .white
-        setUpInputComponents()
+        //  setUpInputComponents()
         
-        setUpKeyBoardObserver()
         
+        // this is the first way to handel keyboard drage up and down
+        //   setUpKeyBoardObserver()
         ///***************** if uou want the keyboard to scroll up & down with the  collection view &table view scrollling ************
         collectionView.keyboardDismissMode = .interactive
+        
+        
+        ///********  the seconde way apple way to handel keyboard drage up & down *********
+        
+        
+        
     }
     
+    
+    lazy var inputTextField: UITextField = {
+        let textField = UITextField()
+        textField.placeholder = "Enter message..."
+        textField.translatesAutoresizingMaskIntoConstraints = false
+        textField.delegate = self
+        ///********** ** * **  ***  ** * *
+        /// to enable Enter key from the keyboard you
+        inputTextReferance = textField
+        return textField
+    }()
+    
+    
+    lazy var inputContainerView: UIView = {
+        let containerView = UIView()
+        containerView.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 50)
+        containerView.backgroundColor = UIColor.white
+         
+        //upload image
+        
+            let uploadImageView = UIImageView()
+            uploadImageView.image = UIImage(named:"uploadImage")
+            
+     
+        
+        
+        
+        
+        
+        let sendButton = UIButton(type: .system)
+        sendButton.setTitle("Send", for: UIControl.State())
+        sendButton.translatesAutoresizingMaskIntoConstraints = false
+        sendButton.addTarget(self, action: #selector(sendMessagesButton), for: .touchUpInside)
+        containerView.addSubview(sendButton)
+        //x,y,w,h
+        sendButton.rightAnchor.constraint(equalTo: containerView.rightAnchor).isActive = true
+        sendButton.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
+        sendButton.widthAnchor.constraint(equalToConstant: 80).isActive = true
+        sendButton.heightAnchor.constraint(equalTo: containerView.heightAnchor).isActive = true
+        
+        containerView.addSubview(self.inputTextField)
+        //x,y,w,h
+        self.inputTextField.leftAnchor.constraint(equalTo: containerView.leftAnchor, constant: 8).isActive = true
+        self.inputTextField.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
+        self.inputTextField.rightAnchor.constraint(equalTo: sendButton.leftAnchor).isActive = true
+        self.inputTextField.heightAnchor.constraint(equalTo: containerView.heightAnchor).isActive = true
+        
+        let separatorLineView = UIView()
+        separatorLineView.backgroundColor = UIColor(r: 220, g: 220, b: 220)
+        separatorLineView.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(separatorLineView)
+        //x,y,w,h
+        separatorLineView.leftAnchor.constraint(equalTo: containerView.leftAnchor).isActive = true
+        separatorLineView.topAnchor.constraint(equalTo: containerView.topAnchor).isActive = true
+        separatorLineView.widthAnchor.constraint(equalTo: containerView.widthAnchor).isActive = true
+        separatorLineView.heightAnchor.constraint(equalToConstant: 1).isActive = true
+        
+        return containerView
+    }()
+    
+    override var inputAccessoryView: UIView? {
+        get {    ///انت هنا بتعمل كونانر وتحط فيه كل الفيوز الالمنتس بتاعتك واما بس لازم تعرف الريفرنس بتاعه  برا  مش جوا البروبراترى دى عشان مش هيشوفها  تعمل ريتارن بس هنا
+            return inputContainerView
+        }
+    }
+    
+    override var canBecomeFirstResponder : Bool {
+        return true
+    }
+    
+    
+    
+    
+    /// old way unused
+    ///  *********************
     
     func setUpKeyBoardObserver() {
         // when key board appeare it firs a notification so i will liesten for this notification then add action  when it fire
@@ -87,7 +170,7 @@ class ChatLogVC: UICollectionViewController  {
         
     }
     
-    
+    /// old way unused
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         // this is very important to remove notification  observer
@@ -95,14 +178,14 @@ class ChatLogVC: UICollectionViewController  {
         NotificationCenter.default.removeObserver(self)
     }
     
-    
+    /// old way unused
     // this method will be called every time the keyboard will showed
     @objc func handleKeyboardWillShow(_ notification: Notification) {
         // this nitification veriable sent automatically to this method this hold information about how to get the height for the keyboard and ex ....
         print(notification.userInfo) // this hold this info
         let keyboardFrame = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as AnyObject).cgRectValue
         
-         // **** keyboardFrame this var hold the key board fram we can access the height of it
+        // **** keyboardFrame this var hold the key board fram we can access the height of it
         print(keyboardFrame?.height)
         // after i get the keyboard height i will move the imput view to top be the height
         
@@ -118,13 +201,13 @@ class ChatLogVC: UICollectionViewController  {
         })
     }
     
-    
-     // dismiss the keyboard  command+k
+    /// old way unused
+    // dismiss the keyboard  command+k
     @objc func handleKeyboardWillHide(_ notification: Notification) {
         let keyboardDuration = (notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as AnyObject).doubleValue
-         
+        
         containerViewBottomAnchor?.constant = -40   // 0
-         
+        
         
         //keyboardDuration  this is the keyboard duration to shown up
         UIView.animate(withDuration: keyboardDuration!, animations: {
@@ -136,91 +219,93 @@ class ChatLogVC: UICollectionViewController  {
     
     var containerViewBottomAnchor : NSLayoutConstraint!
     
-    private func setUpInputComponents(){
-        
-        let inputContainer : UIView = {
-            let container   = UIView()
-            container.backgroundColor = .white
-            //            container.backgroundColor = .green
-            container.translatesAutoresizingMaskIntoConstraints = false
-            
-            
-            return container
-        }()
-        /// adding the input container to the parent container
-        view.addSubview(inputContainer)
-        
-        
-        let inputText : UITextField = {
-            let input = UITextField()
-            input.placeholder = "Write your message ..."
-            input.translatesAutoresizingMaskIntoConstraints = false
-            input.delegate = self               ///********** ** * **  ***  ** * *
-            /// to enable Enter key from the keyboard you
-            
-            return input
-        }()
-        
-        inputTextReferance = inputText
-        
-        
-        
-        let sendButton : UIButton = {
-            let button = UIButton(type: .system)
-            button.translatesAutoresizingMaskIntoConstraints = false
-            button.setTitle("Send", for: .normal)
-            button.addTarget(self, action: #selector(sendMessagesButton), for: .touchUpInside)
-            return button
-        }()
-        
-        
-        //******* Line separator
-        let separatorLine : UIView = {
-            let line = UIView()
-            line.translatesAutoresizingMaskIntoConstraints = false
-            line .backgroundColor  = UIColor(r: 220, g: 220, b: 220)
-            return line
-        }()
-        
-        inputContainer.addSubview(inputText)
-        inputContainer.addSubview(sendButton)
-        inputContainer.addSubview(separatorLine)
-        
-        /// the input container botton constraints  is vaiable with the keyboard height
-        containerViewBottomAnchor = inputContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -40)
-        containerViewBottomAnchor.isActive = true
-        
-        /// * *** * * * * ** * * * * ** * * * * ** * * * * * * * * * * * * *
-        /// right / left anchor constraints doesn't affrcted by localization so you can use it whenever you want to do this
-        /// leading / trailling constraints affected by localization if arabic reading direction gos from right to left  and so on .
-        //iOS 9 constatints
-        NSLayoutConstraint.activate([
-            inputContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            inputContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            inputContainer.heightAnchor.constraint(equalToConstant: 60),
-            
-           // inputContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -40),
-            
-            // input text constraints
-            
-            inputText.leadingAnchor.constraint(equalTo: inputContainer.leadingAnchor, constant: 8),
-            inputText.centerYAnchor.constraint(equalTo: inputContainer.centerYAnchor),
-            inputText.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor),
-            inputText.heightAnchor.constraint(equalTo: inputContainer.heightAnchor),
-            
-            /// button constraints
-            sendButton.widthAnchor.constraint(equalToConstant: 60),
-            sendButton.trailingAnchor.constraint(equalTo: inputContainer.trailingAnchor),
-            sendButton.bottomAnchor.constraint(equalTo: inputContainer.bottomAnchor),
-            sendButton.heightAnchor.constraint(equalTo: inputContainer.heightAnchor),
-            
-            // separator line
-            separatorLine.centerXAnchor.constraint(equalTo: inputContainer.centerXAnchor),
-            separatorLine.widthAnchor.constraint(equalTo: inputContainer.widthAnchor),
-            separatorLine.heightAnchor.constraint(equalToConstant: 1)
-        ])
-        
-    }
+    /// old way unuse
+    /*
+     private func setUpInputComponents(){
+     
+     let inputContainer : UIView = {
+     let container   = UIView()
+     container.backgroundColor = .white
+     //            container.backgroundColor = .green
+     container.translatesAutoresizingMaskIntoConstraints = false
+     
+     
+     return container
+     }()
+     /// adding the input container to the parent container
+     view.addSubview(inputContainer)
+     
+     
+     let inputText : UITextField = {
+     let input = UITextField()
+     input.placeholder = "Write your message ..."
+     input.translatesAutoresizingMaskIntoConstraints = false
+     input.delegate = self               ///
+     /// to enable Enter key from the keyboard you
+     
+     return input
+     }()
+     
+     inputTextReferance = inputText
+     
+     
+     
+     let sendButton : UIButton = {
+     let button = UIButton(type: .system)
+     button.translatesAutoresizingMaskIntoConstraints = false
+     button.setTitle("Send", for: .normal)
+     button.addTarget(self, action: #selector(sendMessagesButton), for: .touchUpInside)
+     return button
+     }()
+     
+     
+     // Line separator
+     let separatorLine : UIView = {
+     let line = UIView()
+     line.translatesAutoresizingMaskIntoConstraints = false
+     line .backgroundColor  = UIColor(r: 220, g: 220, b: 220)
+     return line
+     }()
+     
+     inputContainer.addSubview(inputText)
+     inputContainer.addSubview(sendButton)
+     inputContainer.addSubview(separatorLine)
+     
+     /// the input container botton constraints  is vaiable with the keyboard height
+     containerViewBottomAnchor = inputContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -40)
+     containerViewBottomAnchor.isActive = true
+     
+     ///
+     /// right / left anchor constraints doesn't affrcted by localization so you can use it whenever you want to do this
+     /// leading / trailling constraints affected by localization if arabic reading direction gos from right to left  and so on .
+     //iOS 9 constatints
+     NSLayoutConstraint.activate([
+     inputContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+     inputContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+     inputContainer.heightAnchor.constraint(equalToConstant: 60),
+     
+     // inputContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -40),
+     
+     // input text constraints
+     
+     inputText.leadingAnchor.constraint(equalTo: inputContainer.leadingAnchor, constant: 8),
+     inputText.centerYAnchor.constraint(equalTo: inputContainer.centerYAnchor),
+     inputText.trailingAnchor.constraint(equalTo: sendButton.leadingAnchor),
+     inputText.heightAnchor.constraint(equalTo: inputContainer.heightAnchor),
+     
+     /// button constraints
+     sendButton.widthAnchor.constraint(equalToConstant: 60),
+     sendButton.trailingAnchor.constraint(equalTo: inputContainer.trailingAnchor),
+     sendButton.bottomAnchor.constraint(equalTo: inputContainer.bottomAnchor),
+     sendButton.heightAnchor.constraint(equalTo: inputContainer.heightAnchor),
+     
+     // separator line
+     separatorLine.centerXAnchor.constraint(equalTo: inputContainer.centerXAnchor),
+     separatorLine.widthAnchor.constraint(equalTo: inputContainer.widthAnchor),
+     separatorLine.heightAnchor.constraint(equalToConstant: 1)
+     ])
+     
+     }*/
     
     var inputTextReferance : UITextField?
     
@@ -253,12 +338,14 @@ class ChatLogVC: UICollectionViewController  {
             // the message key
             guard let messageId = messageRef.key else { return }
             
-            let userMessagesRef = Database.database().reference().child("user-messages").child(fromID).child(messageId)
+            
+            /// هنا ان بخزن المسدج بتاعت  المستخدم الحالى  مع الطرف الاخر بال اى دى بتاع الطرف الاخر ال بيكلمه عشان تبقى اسهل وتوفر الكوست ف الداتا بي ز
+            let userMessagesRef = Database.database().reference().child("user-messages").child(fromID).child(toID).child(messageId)
             userMessagesRef.setValue(1)
             
             ///****** hee i will add in user-message table also the group of message for  erver recipient user to get the peer mesage also هنا بخزن الرسايل بتاعت الراجل ال بكلمه بالا اى دى بتاعه عشان اجبلو الرسايل بتوعو بس من طرفه
             
-            let recipientUserMessagesRef = Database.database().reference().child("user-messages").child(toID).child(messageId)
+            let recipientUserMessagesRef = Database.database().reference().child("user-messages").child(toID).child(fromID).child(messageId)
             recipientUserMessagesRef.setValue(1)
             
             
@@ -284,6 +371,9 @@ extension ChatLogVC : UICollectionViewDelegateFlowLayout {
         //  cell.backgroundColor = UIColor.blue
         
         setUpCell(cell: cell, message: message , indexPath : indexPath)
+        cell.textMessage.text = messages[indexPath.row].text
+        
+        cell.bubbleWidthAnchore.constant = estimateFrameForText( message.text!).width + 25
         return cell
     }
     
@@ -297,7 +387,9 @@ extension ChatLogVC : UICollectionViewDelegateFlowLayout {
             // display the blue cell [sender cell ]
             cell.bubbleView.backgroundColor = ChatMessageCell.blueColor
             cell.textMessage.textColor  = .white
-            cell.recieverImage.isHidden = true 
+            //  cell.recieverImage.isHidden = true
+            cell.bubbleViewRightAnchor.isActive = true
+            cell.bubbleViewLeftAnchor.isActive = false
         }else{
             //display the the grey cell [ reciever cell ]
             
@@ -305,7 +397,7 @@ extension ChatLogVC : UICollectionViewDelegateFlowLayout {
             cell.textMessage.textColor  = .black
             cell.bubbleViewLeftAnchor.isActive = true
             cell.bubbleViewRightAnchor.isActive = false
-            
+            cell.recieverImage.isHidden = true
             
             // load  peer image
             
@@ -317,14 +409,12 @@ extension ChatLogVC : UICollectionViewDelegateFlowLayout {
             cell.recieverImage.sd_setImage( with: URL(string: imageUrl), completed: { (image, error, cash, url) in
                 DispatchQueue.main.async {
                     cell.recieverImage.image = image
-                    //                    tableView.reloadData()
+                    
                 }
             })
         }
         
-        cell.textMessage.text = messages[indexPath.row].text
         
-        cell.bubbleWidthAnchore.constant = estimateFrameForText( message.text!).width + 25
         
         /// modify the bubbleView width
     }
@@ -337,7 +427,9 @@ extension ChatLogVC : UICollectionViewDelegateFlowLayout {
             height = estimateFrameForText(text).height + 25
         }
         
-        return CGSize(width: view.frame.width , height: height)
+        /// this  because when u rotate the screen u need to make the width wiith the  main screen width
+        let width = UIScreen.main.bounds.width
+        return CGSize(width: width , height: height)
     }
     
     //** *** * ** tricky

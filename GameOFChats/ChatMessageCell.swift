@@ -74,7 +74,7 @@ class ChatMessageCell : UICollectionViewCell{
                 
                 //x,y,w,h
                 /// to make  show the reviever cell on the left side  *************
-                    bubbleViewRightAnchor = bubbleView.rightAnchor.constraint(equalTo: self.rightAnchor, constant: -8)
+                bubbleViewRightAnchor = bubbleView.rightAnchor.constraint(equalTo: self.rightAnchor, constant: -8)
                     
                 bubbleViewRightAnchor?.isActive = true /// i will  active the right cell only and in the message contrioler item for row i will active or dectivate the two cells
                 
