@@ -38,7 +38,7 @@ class ChatMessageCell : UICollectionViewCell{
     
     lazy var textMessage : UITextView = {
         let tv = UITextView()
-        tv.text = "  DUMMY TEXT FOR NOW ...."
+        tv.text = ""
         tv.translatesAutoresizingMaskIntoConstraints = false
         tv.font  = UIFont.systemFont(ofSize: 16)
         tv.textColor = .white
@@ -61,11 +61,36 @@ class ChatMessageCell : UICollectionViewCell{
     
   
     
+    // image view bubble
+    lazy var showImageBubble  : UIImageView = {
+           let iV = UIImageView()
+          iV.layer.cornerRadius  = 16
+          iV.layer.masksToBounds = true
+           iV.contentMode = .scaleAspectFill
+           iV.translatesAutoresizingMaskIntoConstraints = false
+           
+           return iV
+       }()
+       
+    
     func  configureTextView() {
         addSubview(bubbleView)
         addSubview(textMessage)
         addSubview(recieverImage)
-    
+        
+        //let's add the uploaded image to the bubble
+        bubbleView.addSubview(showImageBubble)
+        
+        
+        /// showImageBubble constraints
+        
+        showImageBubble.leadingAnchor.constraint(equalTo: bubbleView.leadingAnchor).isActive = true
+        showImageBubble.topAnchor.constraint(equalTo: bubbleView.topAnchor).isActive = true
+        showImageBubble.widthAnchor.constraint(equalTo: bubbleView.widthAnchor).isActive = true
+        showImageBubble.heightAnchor.constraint(equalTo: bubbleView.heightAnchor).isActive = true
+        
+          
+        
          //x,y,w,h
                 recieverImage.leftAnchor.constraint(equalTo: self.leftAnchor, constant: 8).isActive = true
                 recieverImage.bottomAnchor.constraint(equalTo: self.bottomAnchor).isActive = true

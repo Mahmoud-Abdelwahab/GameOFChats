@@ -31,24 +31,28 @@ class ChatLogVC: UICollectionViewController  {
                 
                 guard let dictionary = snapshot.value as? [ String: AnyObject] else{return}
                 
-                guard   let text = dictionary["text"] as? String , !text.isEmpty , let formId  = dictionary["fromID"] as? String , !formId.isEmpty , let toID  = dictionary["toID"] as? String , !toID.isEmpty   , let times  = dictionary["timeStamp"] as? NSNumber   else
-                {
-                    return
-                }
+                //                if   let text = dictionary["text"] as? String , !text.isEmpty , let formId  = dictionary["fromID"] as? String , !formId.isEmpty , let toID  = dictionary["toID"] as? String , !toID.isEmpty   , let times  = dictionary["timeStamp"] as? NSNumber   else
+                //                {
+                //                    print("image")
+                //                    return
+                //                }
                 
                 let message = Message(dictionary: dictionary)
                 //  message.setValuesForKeys(dictionary)
-//                message.text = text
-//                message.toID = toID
-//                message.timeStamp = times
-//                message.fromID = formId
+                //                message.text = text
+                //                message.toID = toID
+                //                message.timeStamp = times
+                //                message.fromID = formId
                 
-                if message.chatPartner() == self.user?.id {
-                    self.messages.append(message)
-                    DispatchQueue.main.async(execute: {
-                        self.collectionView?.reloadData()
-                    })
-                }
+                
+                self.messages.append(message)
+                DispatchQueue.main.async(execute: {
+                    self.collectionView?.reloadData()
+                    // scrol to the last index
+                    let indexPath = IndexPath(row: self.messages.count - 1 , section: 0)
+                    self.collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
+                })
+                
                 
             }, withCancel: nil)
             
@@ -74,7 +78,9 @@ class ChatLogVC: UICollectionViewController  {
         
         
         // this is the first way to handel keyboard drage up and down
-        //   setUpKeyBoardObserver()
+        // the edite which i made here is when the keyboard draged up i will scroll the collection view  to the recent message
+        
+          setUpKeyBoardObserver()
         ///***************** if uou want the keyboard to scroll up & down with the  collection view &table view scrollling ************
         collectionView.keyboardDismissMode = .interactive
         
@@ -102,13 +108,16 @@ class ChatLogVC: UICollectionViewController  {
         let containerView = UIView()
         containerView.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 50)
         containerView.backgroundColor = UIColor.white
-         
+        
         //upload image
         
-            let uploadImageView = UIImageView()
-            uploadImageView.image = UIImage(named:"uploadImage")
-            
-     
+        let uploadImageView = UIImageView()
+        uploadImageView.image = UIImage(named:"uploadImage")
+        uploadImageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handelUploadImageTap)))
+        uploadImageView.isUserInteractionEnabled = true
+        uploadImageView.translatesAutoresizingMaskIntoConstraints = false
+        containerView.addSubview(uploadImageView)
+        
         
         
         
@@ -127,7 +136,7 @@ class ChatLogVC: UICollectionViewController  {
         
         containerView.addSubview(self.inputTextField)
         //x,y,w,h
-        self.inputTextField.leftAnchor.constraint(equalTo: containerView.leftAnchor, constant: 8).isActive = true
+        self.inputTextField.leadingAnchor.constraint(equalTo: uploadImageView.trailingAnchor, constant: 8).isActive = true
         self.inputTextField.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
         self.inputTextField.rightAnchor.constraint(equalTo: sendButton.leftAnchor).isActive = true
         self.inputTextField.heightAnchor.constraint(equalTo: containerView.heightAnchor).isActive = true
@@ -142,8 +151,23 @@ class ChatLogVC: UICollectionViewController  {
         separatorLineView.widthAnchor.constraint(equalTo: containerView.widthAnchor).isActive = true
         separatorLineView.heightAnchor.constraint(equalToConstant: 1).isActive = true
         
+        
+        
+        ///
+        uploadImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor).isActive = true
+        uploadImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor).isActive = true
+        uploadImageView.widthAnchor.constraint(equalToConstant: 44).isActive = true // apple recommend
+        uploadImageView.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        
         return containerView
     }()
+    
+    
+    
+    
+    
+    
+    ///
     
     override var inputAccessoryView: UIView? {
         get {    ///انت هنا بتعمل كونانر وتحط فيه كل الفيوز الالمنتس بتاعتك واما بس لازم تعرف الريفرنس بتاعه  برا  مش جوا البروبراترى دى عشان مش هيشوفها  تعمل ريتارن بس هنا
@@ -164,12 +188,17 @@ class ChatLogVC: UICollectionViewController  {
     func setUpKeyBoardObserver() {
         // when key board appeare it firs a notification so i will liesten for this notification then add action  when it fire
         
-        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
+//        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
+//
+//        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardDidShow), name: UIResponder.keyboardDidShowNotification, object: nil)
         
     }
     
+    @objc private func handleKeyboardDidShow(){
+        let indexPath = IndexPath(row: messages.count - 1 , section: 0)
+        collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
+    }
     /// old way unused
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
@@ -311,51 +340,18 @@ class ChatLogVC: UICollectionViewController  {
     
     @objc func sendMessagesButton(){
         
+        
         guard let text = inputTextReferance?.text , !text.isEmpty else {
             print(" the text filed is empty ")
             return
         }
         
-        //let ref = Firebase.Database.database().reference().child("messages")
-        let fromID  = Auth.auth().currentUser!.uid
-        let timeStamp = Int(Date().timeIntervalSince1970)
+        let properties: [String : Any] = [ "text" : text ]
         
-        let toID = user!.id!
-        //**** here i added the message in the messages table and to support multible user i will add the message IDs in another table with  key ---> equal to the sender id to get all messages that belong to this user only from the big messages table
-        let values = ["text" : text , "toID": user!.id! , "fromID" : fromID ,"timeStamp" : timeStamp] as [String : Any]
-        let messageRef = Firebase.Database.database().reference().child("messages").childByAutoId()
-        
-        
-        messageRef.updateChildValues(values) {  (error, dbRef) in
-            guard error == nil
-                else{
-                    return
-            }
-            
-            self.inputTextReferance?.text = nil
-            
-            /// here adding the userMessages table to  group the meesage for every user  --> to get his messages only هنا بخزن الرسايل ال ببعتها بتاعت اليوزر الحالى مع اليوزر ال بكلمه عشان اقدر ا اجيبها اما افتح الشات بينى وبينه تانى 
-            // the message key
-            guard let messageId = messageRef.key else { return }
-            
-            
-            /// هنا ان بخزن المسدج بتاعت  المستخدم الحالى  مع الطرف الاخر بال اى دى بتاع الطرف الاخر ال بيكلمه عشان تبقى اسهل وتوفر الكوست ف الداتا بي ز
-            let userMessagesRef = Database.database().reference().child("user-messages").child(fromID).child(toID).child(messageId)
-            userMessagesRef.setValue(1)
-            
-            ///****** hee i will add in user-message table also the group of message for  erver recipient user to get the peer mesage also هنا بخزن الرسايل بتاعت الراجل ال بكلمه بالا اى دى بتاعه عشان اجبلو الرسايل بتوعو بس من طرفه
-            
-            let recipientUserMessagesRef = Database.database().reference().child("user-messages").child(toID).child(fromID).child(messageId)
-            recipientUserMessagesRef.setValue(1)
-            
-            
-            
-        }
-        
-        
-        
+        sendImageWithPropertise(properties : properties)
     }
 }
+
 
 extension ChatLogVC : UICollectionViewDelegateFlowLayout {
     
@@ -371,64 +367,115 @@ extension ChatLogVC : UICollectionViewDelegateFlowLayout {
         //  cell.backgroundColor = UIColor.blue
         
         setUpCell(cell: cell, message: message , indexPath : indexPath)
-        cell.textMessage.text = messages[indexPath.row].text
+        if let text = message.text {
+            cell.textMessage.text = text
+        }
         
-        cell.bubbleWidthAnchore.constant = estimateFrameForText( message.text!).width + 25
+        if  let text = message.text {
+            cell.bubbleWidthAnchore.constant = estimateFrameForText(text).width + 25
+        }else{
+            // come here if it's an image
+            /// انا هنا بحط عرض البابل  دائما ب ٢٠٠ لما اجى اتعامل مع الصور الصوره ممكن تكون كبيره جدااا اكبر من حجم الشاشه ف انا لازم اعمل نسبه تصغير للصوره عشان اعرضها كلها ف الموبيل aspect ratio   انا  عارف طبعا  طول وعرض الصوره وعارف طبعا عرض البابل ال بيشيل الصوره كدا ناقص نسبة ارتفاع البابل احسبها من المعادله
+            
+            cell.bubbleWidthAnchore.constant = 200
+        }
+        
+        
         return cell
     }
     
     
     private func setUpCell(cell : ChatMessageCell , message : Message , indexPath : IndexPath) {
         
+        guard let imageUrl = user?.profileImageUrl , !imageUrl.isEmpty  else {
+            
+            return
+        }
+        
+        cell.recieverImage.sd_setImage( with: URL(string: imageUrl), completed: { (image, error, cash, url) in
+            DispatchQueue.main.async {
+                cell.recieverImage.image = image
+                
+            }
+        })
+        
+        
         
         // detect which cell to be displayed
-        
         if message.fromID == Auth.auth().currentUser?.uid {
             // display the blue cell [sender cell ]
+            
             cell.bubbleView.backgroundColor = ChatMessageCell.blueColor
             cell.textMessage.textColor  = .white
-            //  cell.recieverImage.isHidden = true
+            cell.recieverImage.isHidden = true
             cell.bubbleViewRightAnchor.isActive = true
             cell.bubbleViewLeftAnchor.isActive = false
+            //  cell.showImageBubble.isHidden  = true
         }else{
             //display the the grey cell [ reciever cell ]
-            
             cell.bubbleView.backgroundColor = UIColor(r: 240, g: 240, b: 240)
             cell.textMessage.textColor  = .black
             cell.bubbleViewLeftAnchor.isActive = true
             cell.bubbleViewRightAnchor.isActive = false
-            cell.recieverImage.isHidden = true
-            
+            cell.recieverImage.isHidden = false
+            //  cell.showImageBubble.isHidden  = false
             // load  peer image
             
-            guard let imageUrl = user?.profileImageUrl , !imageUrl.isEmpty  else {
-                
-                return
-            }
-            
-            cell.recieverImage.sd_setImage( with: URL(string: imageUrl), completed: { (image, error, cash, url) in
-                DispatchQueue.main.async {
-                    cell.recieverImage.image = image
-                    
-                }
-            })
         }
+        
+        displayImageInBubble(cell : cell , message :  message)
         
         
         
         /// modify the bubbleView width
     }
     
+    func displayImageInBubble(cell : ChatMessageCell , message :  Message){
+        // if the image url is not nill then this message is image message
+        if let imageUrl = message.imageUrl
+        {
+            // image message type  /// you can and type in the message and  check on it it's better
+            cell.showImageBubble.sd_setImage( with: URL(string: imageUrl), completed: { (image, error, cash, url) in
+                DispatchQueue.main.async {
+                    cell.showImageBubble.image = image
+                    
+                }
+            })
+            cell.showImageBubble.isHidden = false
+            cell.bubbleView.backgroundColor = .clear
+            
+        }else {
+            cell.showImageBubble.isHidden = true
+            //  cell.bubbleView.isHidden      = false
+            
+        }
+    }
+    
+    ///*******************************
     // set cell size to full width
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        var height : CGFloat = 80
-        // here i nedd to get the estimated hight ---> the height is variable based on the number of lines in the message
-        if let text = messages[indexPath.item].text{
-            height = estimateFrameForText(text).height + 25
-        }
+        var height : CGFloat = 100
         
+        
+        // here i nedd to get the estimated hight ---> the height is variable based on the number of lines in the message
+        let message =  messages[indexPath.item]
+        if let text = message.text{
+            height = estimateFrameForText(text).height + 25
+        }else if  let imageWidth = message.imageWidth?.floatValue , let imageHeight = message.imageHeight?.floatValue {
+            // create height & width for every image
+            // here i make the bubble --->[ image container] constant = 200 now i need to get the height for the bubble which will containe the image  but How???
+            
+            /// انا هنا بحط عرض البابل  دائما ب ٢٠٠ لما اجى اتعامل مع الصور الصوره ممكن تكون كبيره جدااا اكبر من حجم الشاشه ف انا لازم اعمل نسبه تصغير للصوره عشان اعرضها كلها ف الموبيل aspect ratio   انا  عارف طبعا  طول وعرض الصوره وعارف طبعا عرض البابل ال بيشيل الصوره كدا ناقص نسبة ارتفاع البابل احسبها من المعادله
+            
+            /// ** i know the bubble width  it;s constant = 200 and i know the image height and width i stored them in the database so to get the bubble height this is the equation h1 / w1 = h2 / w2
+            // so h1 = (h2/w2) * w1
+            
+            height =  CGFloat(imageHeight / imageWidth * 200)
+            
+        }
         /// this  because when u rotate the screen u need to make the width wiith the  main screen width
-        let width = UIScreen.main.bounds.width
+        /// the constant width = 200 for the bubble  but her i must return cell width = full screen
+        var width : CGFloat = UIScreen.main.bounds.width
         return CGSize(width: width , height: height)
     }
     
@@ -436,7 +483,7 @@ extension ChatLogVC : UICollectionViewDelegateFlowLayout {
     // get estimated height my custom function
     
     fileprivate func estimateFrameForText(_ text: String) -> CGRect {
-        //300 as bubble width in messagecell  // 1000 this is the max heigh we supposed to makein messages
+        //200 as bubble width in messagecell  // 1000 this is the max heigh we supposed to makein messages
         let size = CGSize(width: 200, height: 1000)
         
         let attributes = [NSAttributedString.Key.font:
@@ -460,7 +507,7 @@ extension ChatLogVC : UICollectionViewDelegateFlowLayout {
 }
 
 
-extension ChatLogVC : UITextFieldDelegate {
+extension ChatLogVC : UITextFieldDelegate  , UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         sendMessagesButton()
@@ -468,5 +515,111 @@ extension ChatLogVC : UITextFieldDelegate {
     }
     
     
+    
+    @objc func handelUploadImageTap(){
+        // get image picker
+        
+        let imagePickerController = UIImagePickerController()
+        
+        imagePickerController.allowsEditing = true
+        imagePickerController.delegate = self
+        
+        present(imagePickerController, animated: true, completion: nil)
+    }
+    
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        dismiss(animated: true, completion: nil)
+    }
+    
+    
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        // selecting image form the picker
+        var selectedImageFromPicker: UIImage?
+        
+        guard let selectedImage = info[UIImagePickerController.InfoKey.editedImage] as? UIImage else{return}
+        
+        uploatImageToFirebaseStorage(selectedImage)
+        
+        picker.dismiss(animated: true, completion: nil)
+        
+        
+    }
+    
+    
+    private func  uploatImageToFirebaseStorage(_ image : UIImage){
+        print("selected")
+        let imageName = UUID().uuidString ///generate reandom string numbber  for image name
+        
+        // compressing image to jpeg data
+        guard let uploadData = image.jpegData(compressionQuality: 0.2) else {return}
+        
+        let ref = Storage.storage().reference().child("message_images").child( "\(imageName).jpeg")
+        // i will store image first in firsbase then i will download it's url  to send it again in the realtime database
+        ref.putData(uploadData, metadata: nil, completion: { (metadata, error) in
+            
+            if error != nil {
+                print("Failed to upload image:", error!)
+                return
+            }
+            
+            ref.downloadURL(completion: { (url, err) in
+                if let err = err {
+                    print(err)
+                    return
+                }
+                print(url?.absoluteString)
+                guard let imageURl = url?.absoluteString else {return}
+                self.sendMessageWithImageUrl(with: imageURl , image : image)
+            })
+            
+        })
+        
+    }
+    
+    
+    
+    
+    private func sendMessageWithImageUrl( with Url : String , image : UIImage){
+        
+        
+        let properties: [String : Any] = [ "imageUrl" : Url , "imageHeight" :image.size.height , "imageWidth" : image.size.width]
+        
+        sendImageWithPropertise(properties : properties)
+    }
+    
+    /// this is a genaric fucntion  for sending the image and text message  according to the properties which i send to it and append this properties to the values dictionary
+    private func sendImageWithPropertise(properties : [String : Any]){
+        
+        
+        
+        let ref = Database.database().reference().child("messages")
+        let childRef = ref.childByAutoId()
+        let toID = user!.id!
+        let fromID = Auth.auth().currentUser!.uid
+        let timestamp = Int(Date().timeIntervalSince1970)
+        
+        var values : [String : Any] = ["toID": toID, "fromID": fromID, "timeStamp": timestamp ]
+        // i will append the properties to the values dictionary
+        // $0 is the key , $1 is the value
+        properties.forEach ({values[$0] = $1})
+        
+        childRef.updateChildValues(values) { (error, ref) in
+            if error != nil {
+                print(error!)
+                return
+            }
+            
+            self.inputTextField.text = nil
+            
+            guard let messageId = childRef.key else { return }
+            
+            let userMessagesRef = Database.database().reference().child("user-messages").child(fromID).child(toID).child(messageId)
+            userMessagesRef.setValue(1)
+            
+            let recipientUserMessagesRef = Database.database().reference().child("user-messages").child(toID).child(fromID).child(messageId)
+            recipientUserMessagesRef.setValue(1)
+        }
+    }
 }
 
