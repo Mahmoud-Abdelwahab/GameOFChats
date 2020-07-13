@@ -10,6 +10,9 @@ import UIKit
 
 class ChatMessageCell : UICollectionViewCell{
     
+    
+   weak var chatLogVC : ChatLogVC?
+    
    static let  blueColor = UIColor(r: 0, g: 137, b: 249)
       var bubbleViewRightAnchor : NSLayoutConstraint!
     var bubbleViewLeftAnchor : NSLayoutConstraint!
@@ -69,9 +72,21 @@ class ChatMessageCell : UICollectionViewCell{
            iV.contentMode = .scaleAspectFill
            iV.translatesAutoresizingMaskIntoConstraints = false
            
+        /// adding gesture to the image
+        iV.isUserInteractionEnabled = true
+        iV.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleImageZoom)))
            return iV
        }()
        
+    @objc func handleImageZoom(tapGesture : UITapGestureRecognizer){
+        print("image pressed ...!")
+        if  let imageView = tapGesture.view as? UIImageView {
+            self.chatLogVC?.performZoonInForImage(originalImageView: imageView)
+                   /// Tip Pro : Don't make a lot of custom login inside the view  so this collectionviewcell is a view class so it's not recommended to do  the zoon login here so i will create delegate to perfome this logic in chat log class
+        }
+       
+    }
+    
     
     func  configureTextView() {
         addSubview(bubbleView)
@@ -130,4 +145,5 @@ class ChatMessageCell : UICollectionViewCell{
                 textMessage.heightAnchor.constraint(equalTo: self.heightAnchor).isActive = true
         
     }
+    
 }

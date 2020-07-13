@@ -9,6 +9,11 @@
 import UIKit
 import Firebase
 import SDWebImage
+// for videos
+import MobileCoreServices
+import AVFoundation
+self.startingOriginalImageView?.isHidden = true
+
 class ChatLogVC: UICollectionViewController  {
     
     var messages = [Message]()
@@ -350,6 +355,89 @@ class ChatLogVC: UICollectionViewController  {
         
         sendImageWithPropertise(properties : properties)
     }
+    
+    
+    
+    /// handel zoon in logic from delegate
+       
+       var startingOriginalFram : CGRect?
+    
+       var blackBackgroundView : UIView?
+     
+    var startingOriginalImageView : UIImageView?
+       func performZoonInForImage(originalImageView : UIImageView?){
+        self.startingOriginalImageView = originalImageView
+        // no need to sill show this image while zoomingIN  i will return it visable back when i zoomOut
+        self.startingOriginalImageView?.isHidden = true
+            print("performing zoon in  logic for image ....")
+           // get the origianl image fram
+          startingOriginalFram = originalImageView?.superview?.convert(originalImageView!.frame, to: nil)
+           print(startingOriginalFram)
+           let zoomingImageView = UIImageView(frame: startingOriginalFram!)
+           zoomingImageView.backgroundColor = .cyan
+           zoomingImageView.isUserInteractionEnabled = true
+           zoomingImageView.image = originalImageView?.image
+           //this gesture to handle zoom out
+           zoomingImageView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleZoomOut)))
+           // adding this new fram cover with the same image fram in the Screen itself
+           if let keyWindow = UIApplication.shared.keyWindow {
+               // i will create a black container which will be on th e back of the zooming image
+                blackBackgroundView = UIView(frame: keyWindow.frame) // initialized it with the full screen
+            blackBackgroundView?.backgroundColor = .black
+               // start from alph = 0 to 1
+               blackBackgroundView?.alpha = 0
+               // i will add it to the window screen before the zoomingImageView
+            keyWindow.addSubview(blackBackgroundView!)
+               
+               //////////////
+               keyWindow.addSubview(zoomingImageView)
+               
+               /// now i want to zoon in the image with animation
+               UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseIn, animations: {
+                self.blackBackgroundView?.alpha = 1
+                   //hidding the inputcontaner
+                   self.inputContainerView.isHidden = true
+                   
+                   /// this zoomingImageView is th eimage container like bubble i know the image width and height and i know the container width how to get the height  ?
+                   // h2 = h1/w1 * w2
+                let height = self.startingOriginalFram!.height / self.startingOriginalFram!.width * keyWindow.frame.width
+
+                   zoomingImageView.frame = CGRect(x:0, y: 0, width: keyWindow.frame.width, height: height)
+                   
+                   //to center imageview in the screen
+                   zoomingImageView.center = keyWindow.center
+               }, completion: nil)
+               // nothing to do here
+           }
+          
+       }
+       
+       
+       // handling ZoomOut
+       @objc func handleZoomOut(tapGesture : UITapGestureRecognizer){
+           
+        // i want to retrun the view back to the originalimagefram size
+        if let zoomOutImageView = tapGesture.view {
+            UIView.animate(withDuration: 0.5, delay: 0, usingSpringWithDamping: 1, initialSpringVelocity: 1, options: .curveEaseOut, animations: {
+                zoomOutImageView.layer.cornerRadius = 16
+                zoomOutImageView.clipsToBounds = true
+                // return the image container to it's origin state
+                zoomOutImageView.frame = self.startingOriginalFram!
+                //  hidding the alph = 0 of the big black container
+                self.blackBackgroundView?.alpha = 0
+                //return the input view to be visable
+                self.inputContainerView.isHidden = false
+
+            }, completion: { (completed) in
+                zoomOutImageView.removeFromSuperview()
+                self.blackBackgroundView?.removeFromSuperview()
+                self.startingOriginalImageView?.isHidden = true
+
+                       })
+            
+        }
+       }
+    
 }
 
 
@@ -362,6 +450,8 @@ extension ChatLogVC : UICollectionViewDelegateFlowLayout {
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath) as! ChatMessageCell
+        
+        cell.chatLogVC = self
         
         let message = messages[indexPath.row]
         //  cell.backgroundColor = UIColor.blue
@@ -502,8 +592,6 @@ extension ChatLogVC : UICollectionViewDelegateFlowLayout {
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) { // to make the layout validate and fit when rotate the screen
         collectionView.collectionViewLayout.invalidateLayout()
     }
-    
-    
 }
 
 
@@ -523,7 +611,8 @@ extension ChatLogVC : UITextFieldDelegate  , UIImagePickerControllerDelegate, UI
         
         imagePickerController.allowsEditing = true
         imagePickerController.delegate = self
-        
+        /// to show videos also  with images
+      //  imagePickerController.mediaTypes = [KUTTypeImage]
         present(imagePickerController, animated: true, completion: nil)
     }
     
@@ -590,8 +679,6 @@ extension ChatLogVC : UITextFieldDelegate  , UIImagePickerControllerDelegate, UI
     
     /// this is a genaric fucntion  for sending the image and text message  according to the properties which i send to it and append this properties to the values dictionary
     private func sendImageWithPropertise(properties : [String : Any]){
-        
-        
         
         let ref = Database.database().reference().child("messages")
         let childRef = ref.childByAutoId()
