@@ -12,7 +12,6 @@ import SDWebImage
 // for videos
 import MobileCoreServices
 import AVFoundation
-self.startingOriginalImageView?.isHidden = true
 
 class ChatLogVC: UICollectionViewController  {
     

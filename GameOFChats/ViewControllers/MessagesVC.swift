@@ -100,7 +100,6 @@ class MessagesVC: UITableViewController {
                         if let partnerId = message.chatPartner(){ //here the message between me and any other person i want to group them together with the current user id only to remove duplicated cell in this table  if u removed this ans set it toId or fromId only this will cause bug cause it depends on the cureent user and we can't detect the current user id from the to way message except when we compare ther in this func   message.chatPartner()
                             ///  this is very important to  remove all message duplication  to the same user  and show the last message only so i put the messages in a dictionary with the [ same ] key  then put  it as array in messages array  which hold all users then the cureent user chated with them before
                             
-                            #warning("Bug here")              ////  **************** Bug here *****************
                             self.messageDictionary[partnerId] = message
                             
                         }
@@ -443,6 +442,33 @@ extension MessagesVC {
         
         
         
+    }
+    
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        
+        guard let uid = Auth.auth().currentUser?.uid else {
+            return
+        }
+        
+        let message = self.messages[indexPath.row]
+        
+        if let chatPartnerId = message.chatPartner() {
+            Database.database().reference().child("user-messages").child(uid).child(chatPartnerId).removeValue(completionBlock: { (error, ref) in
+                
+                if error != nil {
+                    print("Failed to delete message:", error!)
+                    return
+                }
+                
+                self.messageDictionary.removeValue(forKey: chatPartnerId)
+                self.attemptReloadOfTable()
+                
+                //                //this is one way of updating the table, but its actually not that safe..
+                //                self.messages.removeAtIndex(indexPath.row)
+                //                self.tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Automatic)
+                
+            })
+        }
     }
     
 }
